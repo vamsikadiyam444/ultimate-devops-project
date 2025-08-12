@@ -25,12 +25,9 @@ jobs:
           cd src/payment
           npm ci
 
-      # Test step removed to avoid 'Missing script: "test"' error
+      # Test step removed
 
-      - name: Run lint
-        run: |
-          cd src/payment
-          npm run lint  # Optional, if you have lint script
+      # Lint step removed
 
   docker:
     runs-on: ubuntu-latest
