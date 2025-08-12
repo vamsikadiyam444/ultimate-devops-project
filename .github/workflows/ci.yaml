@@ -1,4 +1,4 @@
-name: product-catalog-ci
+name: payment-ci
 
 on: 
   pull_request:
@@ -10,53 +10,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # fetch full history for safe push
 
-      - name: Setup Go 1.22
-        uses: actions/setup-go@v2
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          go-version: 1.22
-      
-      - name: Build
-        run: |
-          cd src/product-catalog
-          go mod download
-          go build -o product-catalog-service main.go
+          python-version: '3.11'
 
-      - name: unit tests
+      - name: Install dependencies
         run: |
-          cd src/product-catalog
-          go test ./...
+          cd src/payment
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: |
+          cd src/payment
+          pytest --maxfail=1 --disable-warnings -q
 
   code-quality:
     runs-on: ubuntu-latest
 
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: Setup Go 1.22
-        uses: actions/setup-go@v2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
-          go-version: 1.22
-      
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.55.2
-          working-directory: src/product-catalog
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: pip install flake8 black
+
+      - name: Run flake8 lint
+        run: |
+          cd src/payment
+          flake8 .
 
   docker:
     runs-on: ubuntu-latest
     needs: build
 
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -73,17 +75,17 @@ jobs:
       - name: Build and Push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: src/product-catalog
-          file: src/product-catalog/Dockerfile
+          context: src/payment
+          file: src/payment/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/product-catalog:${{ github.run_id }}
+          tags: ${{ secrets.DOCKER_USERNAME }}/payment:${{ github.run_id }}
 
   updatek8s:
     runs-on: ubuntu-latest
     needs: docker
 
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -91,16 +93,16 @@ jobs:
 
       - name: Update tag in Kubernetes deployment manifest
         run: |
-          sed -i "s|image: .*|image: ${{ secrets.DOCKER_USERNAME }}/product-catalog:${{ github.run_id }}|" kubernetes/productcatalog/deploy.yaml
+          sed -i "s|image: .*|image: ${{ secrets.DOCKER_USERNAME }}/payment:${{ github.run_id }}|" kubernetes/payment/deploy.yaml
         shell: bash
 
       - name: Commit and push changes if any
         run: |
           git config --global user.email "vamsikadiyam444@gmail.com"
           git config --global user.name "vamsikadiyam444"
-          git add kubernetes/productcatalog/deploy.yaml
+          git add kubernetes/payment/deploy.yaml
           if ! git diff --cached --quiet; then
-            git commit -m "[CI]: Update product catalog image tag"
+            git commit -m "[CI]: Update payment image tag"
             git pull --rebase origin main
             git push origin HEAD:main
           else
