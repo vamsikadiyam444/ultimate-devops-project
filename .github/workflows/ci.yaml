@@ -46,7 +46,6 @@ jobs:
         with:
           version: v1.55.2
           working-directory: src/product-catalog
-          # Removed invalid 'run' input
 
   docker:
     runs-on: ubuntu-latest
@@ -81,7 +80,7 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.TOKEN }}  # Use built-in token for pushing commits
+          token: ${{ secrets.TOKEN }}  # Use the default token for pushing commits
 
       - name: Update tag in Kubernetes deployment manifest
         run: |
