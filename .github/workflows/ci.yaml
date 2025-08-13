@@ -51,7 +51,7 @@ jobs:
       - name: Build and Push Docker image
         uses: docker/build-push-action@v6
         with:
-          context: src/payment
+          context: .               # changed from src/payment
           file: src/payment/Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/payment-service:${{ github.run_id }}
@@ -75,13 +75,5 @@ jobs:
       - name: Commit and push changes if any
         run: |
           git config --global user.email "vamsikadiyam444@gmail.com"
-          git config --global user.name "vamsikadiyam444"
-          git add kubernetes/payment/deploy.yaml
-          if ! git diff --cached --quiet; then
-            git commit -m "[CI]: Update payment service image tag"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          else
-            echo "No changes to commit"
-          fi
-        shell: bash
+          gi
+
