@@ -26,7 +26,6 @@ jobs:
           npm ci
 
       # Test step removed
-
       # Lint step removed
 
   docker:
@@ -75,5 +74,13 @@ jobs:
       - name: Commit and push changes if any
         run: |
           git config --global user.email "vamsikadiyam444@gmail.com"
-          gi
-
+          git config --global user.name "vamsikadiyam444"
+          git add kubernetes/payment/deploy.yaml
+          if ! git diff --cached --quiet; then
+            git commit -m "[CI]: Update payment service image tag"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          else
+            echo "No changes to commit"
+          fi
+        shell: bash
